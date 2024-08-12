@@ -31,6 +31,7 @@ def make_noaa_req(opts={}):
     }
 
     headers = {"token": token}
+    print(f"Request to NOAA API with params: {params}")
     response = requests.get(url, headers=headers, params=params)
     data = json.loads(response.text)
 
@@ -44,6 +45,7 @@ def make_noaa_req(opts={}):
 
 
 def lambda_handler(event, context):
+    print(f"Lambda invoked with event: {event}")
     state = event.get("state", {})
     curr_year = datetime.now().year
     requested_year = state.get("year", curr_year)
@@ -74,6 +76,7 @@ def lambda_handler(event, context):
         },
         "hasMore": False,
     }
+    print(f"Lambda returning: {ret}")
     return json.dumps(ret)
 
 
