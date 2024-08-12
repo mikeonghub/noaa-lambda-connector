@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: NOAA Fetch function
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 128
+
+    LoggingConfig:
+      LogFormat: JSON
+Resources:
+  NOAAFetchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: noaa/
+      Handler: app.lambda_handler
+      Runtime: python3.11
+      FunctionName: noaa-fetch
+      Architectures:
+      - x86_64
+      Environment:
+        Variables:
+          # Note: These secrets need to be created in the AWS Secrets manager
+          NOAA_API_KEY: '{{resolve:secretsmanager:NOAACreds:SecretString:NOAA_API_KEY}}'
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  NOAAFetchFunction:
+    Description: NOAA Fetch Lambda Function ARN
+    Value: !GetAtt NOAAFetchFunction.Arn
+  NOAAFetchFunctionIamRole:
+    Description: Implicit IAM Role created for NOAA Fetch function
+    Value: !GetAtt NOAAFetchFunction.Arn
