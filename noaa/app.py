@@ -2,11 +2,7 @@ import os
 import json
 import requests
 from datetime import datetime
-
-
-def reformat_date(date_str):
-    date_obj = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
-    return date_obj.strftime("%Y-%m-%d")
+import uuid
 
 
 def make_noaa_req(opts={}):
@@ -37,18 +33,18 @@ def make_noaa_req(opts={}):
 
     if "results" in data:
         for obj in data["results"]:
-            formatted_date = reformat_date(obj["date"])
-            obj["date"] = formatted_date
-            obj["id"] = f"{opts['stationid']}-{formatted_date}"
+            # We don't get an id from the API, so give it one
+            obj["id"] = str(uuid.uuid4())
 
     return data
 
 
 def lambda_handler(event, context):
     print(f"Lambda invoked with event: {event}")
+    first_year = 2014
     state = event.get("state", {})
     curr_year = datetime.now().year
-    requested_year = state.get("year", curr_year)
+    requested_year = state.get("year", first_year)
     year = requested_year if requested_year <= curr_year else curr_year
 
     # TODO: Multiple stations theoretically work, but I haven't been able to get data back from the API yet
@@ -82,4 +78,4 @@ def lambda_handler(event, context):
 
 if __name__ == "__main__":
     # NOTE: Right now, this is only used for local testing, so use a limited state
-    lambda_handler({"state": {"year": 2020, "limit": 1}}, {})
+    lambda_handler({"state": {"limit": 1}}, {})
